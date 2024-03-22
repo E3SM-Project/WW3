@@ -523,13 +523,17 @@
                   (-0.00010791)*x1sqr*x2 + &
                   0.00031073*x1**3 + 1.5996e-06*x2**3 + 0.090994*x3**3
             KARG1(ik)=min(karg1(ik),0.0)
-            WN_I(ik)  = 10.0**KARG1(ik)
+            !WN_I(ik)  = 10.0**KARG1(ik)
+            ALPHA(ik)  = 10.0**KARG1(ik)
             perfour=x1sqr*x1sqr
             if ((x1.gt.5.0) .and. (x1.lt.20.0)) then
-              WN_I(IK) = WN_I(IK) + amhb/x1sqr+bmhb/perfour
+              !WN_I(IK) = WN_I(IK) + amhb/x1sqr+bmhb/perfour
+              ALPHA(IK) = ALPHA(IK) + amhb/x1sqr+bmhb/perfour
             else if (x1.gt.20.0) then
-              WN_I(IK) = amhb/x1sqr+bmhb/perfour
+              !WN_I(IK) = amhb/x1sqr+bmhb/perfour
+              ALPHA(IK) = amhb/x1sqr+bmhb/perfour
             endif
+              WN_I(IK) = 0.5 * ALPHA(IK)
           end do
 
         CASE DEFAULT
