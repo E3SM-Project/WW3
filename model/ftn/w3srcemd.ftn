@@ -1383,7 +1383,7 @@
 !/DEBUGSRC     IF (IX .eq. DEBUG_NODE) THEN
 !/DEBUGSRC       WRITE(740+IAPROC,*) '3 : sum(SPEC)=', sum(SPEC)
 !/DEBUGSRC     END IF
-! ET EDIT: the following section of code should only get used for any IC
+! The following section of code should only get used for any IC
 ! switch EXCEPT IC4. 
       IF ( INFLAGS2(4).AND.ICE.GT.0 ) THEN 
 
@@ -1426,7 +1426,9 @@
 !/IC2                CALL W3SIC2 ( SPEC, DEPTH, ICEH, ICEF, CG1, WN1,&
 !/IC2                              IX, IY, VSIC, VDIC, WN_R, CG_ICE, ALPHA_LIU, R)
 !/IC3      CALL W3SIC3 ( SPEC,DEPTH, CG1,  WN1, IX, IY, VSIC, VDIC )
-      ! ET EDIT: REMOVE CALL to WSIC4 (moved to line ~876) 
+
+! REMOVED CALL to WSIC4 (moved to line ~876) 
+
 !/IC5      CALL W3SIC5 ( SPEC,DEPTH, CG1,  WN1, IX, IY, VSIC, VDIC )
 !
 !/IS1      CALL W3SIS1 ( SPEC, ICE, VSIR )
@@ -1454,7 +1456,7 @@
 !/IC1             ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IC2             ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IC3             ATT=EXP(ICE*VDIC(IS)*DTG)
-     ! ET EDIT : remove IC4 line 
+!  Removed IC4 line- updated numerics scheme for IC4
 !/IC5             ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IS1             ATT=ATT*EXP(ICE*VDIR(IS)*DTG)
 !/IS2             ATT=ATT*EXP(ICE*VDIR2(IS)*DTG)
