@@ -196,6 +196,7 @@
 !                               an array for simplicity
 !      IC4_KI    R.A.  Public   KI (dissipation rate) values for use in IC4
 !      IC4_FC    R.A.  Public   FC (frequency bin separators) for use in IC4
+!      IC4_NUMERICS Log Public  Turn on/off IC4 numerics fix              
 !      PFMOVE    Real  Public   Tunable parameter in GSE correction
 !                               for moving grids.
 !      GRIDSHIFT Real  Public   Grid offset for multi-grid w/SCRIP
@@ -682,6 +683,7 @@
 !/IC4        INTEGER, POINTER      :: IC4PARS(:)
 !/IC4        REAL, POINTER         :: IC4_KI(:)
 !/IC4        REAL, POINTER         :: IC4_FC(:)
+!/IC4        LOGICAL, POINTER      :: IC4_NUMERICS
 !/IC5        REAL,    POINTER      :: IC5PARS(:)
 !/IS2        REAL,    POINTER      :: IS2PARS(:)
 !
@@ -982,6 +984,7 @@
 !/IC4      INTEGER, POINTER        :: IC4PARS(:)
 !/IC4      REAL, POINTER           :: IC4_KI(:)
 !/IC4      REAL, POINTER           :: IC4_FC(:)
+!/IC4      LOGICAL, POINTER        :: IC4_NUMERICS
 !/IC5      REAL,    POINTER        :: IC5PARS(:)
 !/IS2      REAL,    POINTER        :: IS2PARS(:)
       INTEGER, POINTER        :: MAPSTA(:,:), MAPST2(:,:),            &
@@ -1534,6 +1537,8 @@
 !/IC4       CHECK_ALLOC_STATUS ( ISTAT )
 !/IC4       ALLOCATE ( GRIDS(IMOD)%IC4_FC(NIC4), STAT=ISTAT )
 !/IC4       CHECK_ALLOC_STATUS ( ISTAT )
+!/IC4       ALLOCATE ( GRIDS(IMOD)%IC4_NUMERICS, STAT=ISTAT )
+!/IC4       CHECK_ALLOC_STATUS ( ISTAT )
 !/IC5       ALLOCATE ( GRIDS(IMOD)%IC5PARS(9), STAT=ISTAT )
 !/IC5       CHECK_ALLOC_STATUS ( ISTAT )
 !/IS2       ALLOCATE ( GRIDS(IMOD)%IS2PARS(24), STAT=ISTAT )
@@ -1966,6 +1971,7 @@
 !/IC4      IC4PARS => GRIDS(IMOD)%IC4PARS
 !/IC4      IC4_KI => GRIDS(IMOD)%IC4_KI
 !/IC4      IC4_FC => GRIDS(IMOD)%IC4_FC
+!/IC4      IC4_NUMERICS => GRIDS(IMOD)%IC4_NUMERICS
 !/IC5      IC5PARS => GRIDS(IMOD)%IC5PARS
 !/IS2      IS2PARS => GRIDS(IMOD)%IS2PARS
       SX     => GRIDS(IMOD)%SX
