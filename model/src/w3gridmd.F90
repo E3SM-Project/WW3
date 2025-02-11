@@ -699,6 +699,7 @@
 !
 #endif
       REAL, ALLOCATABLE       :: XGRDIN(:,:), YGRDIN(:,:)
+      REAL, ALLOCATABLE       :: XUGRDIN(:), YUGRDIN(:)
       REAL, ALLOCATABLE       :: ZBIN(:,:), OBSX(:,:), OBSY(:,:)
       REAL, ALLOCATABLE       :: REFD(:,:), REFD2(:,:), REFS(:,:)
 #ifdef W3_BT4
@@ -778,7 +779,7 @@
 #endif
 
       CHARACTER               :: COMSTR*1, PNAME*30, RFORM*16,        &
-                                 FROM*4, FNAME*60, TNAME*60, LINE*80, &
+                                 FROM*4, FNAME*160, TNAME*60, LINE*80, &
                                  STATUS*20,FNAME2*60, PNAME2*40
       CHARACTER(LEN=6)        :: YESXNO(2)
 #ifdef W3_FLX3
@@ -1139,7 +1140,10 @@
 
       CONTAINS
 
-      SUBROUTINE W3GRID()
+      SUBROUTINE W3GRID(MDS)
+      
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: MDS(5)
 
 #ifdef W3_O0
       FLNMLO = .TRUE.
@@ -1153,7 +1157,7 @@
 !
       CALL W3NMOD ( 1, 6, 6 )
       CALL W3SETG ( 1, 6, 6 )
-      CALL W3NOUT (    6, 6 )
+      CALL W3NOUT (    6, 6, NDSO)
       CALL W3SETO ( 1, 6, 6 )
 !
 !--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1162,9 +1166,9 @@
 #ifdef W3_DEBUGGRID
       IAPROC = 1
 #endif
-      NDSI   = 10
-      NDSS   = 99
-      NDSM   = 20
+      NDSI   = MDS(1)
+      NDSS   = MDS(2)
+      NDSM   = MDS(3)
 !
       INQUIRE(FILE=TRIM(FNMPRE)//"ww3_grid.nml", EXIST=FLGNML) 
       IF (FLGNML) THEN
@@ -1181,8 +1185,8 @@
               ERR=2000,IOSTAT=IERR)
       END IF
 !
-      NDSTRC =  6
-      NTRACE =  10
+      NDSTRC =  MDS(4)
+      NTRACE =  MDS(5)
       CALL ITRACE ( NDSTRC, NTRACE )
 !
 #ifdef W3_S
@@ -3306,6 +3310,9 @@
 #ifdef W3_PR3
           WRITE (NDSO,2953) CFLTM, WDTHCG, WDTHTH
 #endif
+#ifdef W3_RTD
+          WRITE (NDSO,2954) PLON, PLAT, UNROT
+#endif
 !
         WRITE (NDSO,2956) UGBCCFL, UGOBCAUTO, UGOBCDEPTH,TRIM(UGOBCFILE), &
                           EXPFSN, EXPFSPSI, EXPFSFCT, IMPFSN, EXPTOTAL,&
@@ -4143,8 +4150,19 @@
 
  !       Calculate rotation angles; (StdLon/Lat are returned, but not used)
  !       The regular grid X/YGRDIN are used as equatorial lon and lat
+       IF (GTYPE.NE.UNGTYPE) THEN
          CALL W3EQTOLL( YGRDIN, XGRDIN, StdLat, StdLon, AnglDin, &
                       PoLat, PoLon, NX*NY )
+
+       ELSE
+         ALLOCATE(XUGRDIN(NX*NY),YUGRDIN(NX*NY))
+         DO IX = 1,NX*NY
+           XUGRDIN(IX) = XYB(IX,1)
+           YUGRDIN(IX) = XYB(IX,2)
+         ENDDO
+         CALL W3EQTOLL(YUGRDIN, XUGRDIN, StdLat, StdLon, AnglDin, &
+                       PoLat, PoLon, NX*NY )
+       ENDIF
 
  !       Clean up
          DEALLOCATE( StdLat, StdLon )
@@ -6678,6 +6696,9 @@
               '    shadow calibration factor: ',F5.2)
  4502 FORMAT ('  &UOST UOSTFILELOCAL = ',A,', UOSTFILESHADOW = ',A,/ &
               '        UOSTFACTORLOCAL = ',F5.2', UOSTFACTORSHADOW = ',F5.2,' /')
+#endif
+#ifdef W3_RTD
+ 2954 FORMAT (' &RTD PLON = ',F9.3,', PLAT = ',F9.3,', UNROT = ',L3,' /')
 #endif
 !
   950 FORMAT (/'  Propagation scheme : '/                             &

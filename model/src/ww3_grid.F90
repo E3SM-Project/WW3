@@ -28,7 +28,15 @@
 !     This is now all done in the subroutine W3GRID
 !
 !  3. Parameters :
-!      none
+!     
+!     Parameter list 
+!     ----------------------------------------------------------------
+!     MDS       I.A.   I   Array with dataset numbers
+!                           1:
+!                           2:
+!                           3:
+!                           4:
+!                           5:
 !
 !  4. Subroutines used :
 !
@@ -56,8 +64,16 @@
 
       USE W3GRIDMD, ONLY: W3GRID
       IMPLICIT NONE
+      INTEGER :: MDS(5)
 
-      CALL W3GRID
+      ! Set file unit numbers
+      MDS(1) = 10    ! NDSI
+      MDS(2) = 99    ! NDSS
+      MDS(3) = 20    ! NDSM
+      MDS(4) = 6     ! NDSTRC
+      MDS(5) = 10    ! NTRACE
+
+      CALL W3GRID(MDS)
 
       END PROGRAM WW3GRID
 

@@ -441,7 +441,7 @@ CONTAINS
 !/ Parameter list
 !/
       INTEGER, INTENT(IN)                :: NDS
-      CHARACTER(60), INTENT(IN)          :: FNAME
+      CHARACTER(160), INTENT(IN)         :: FNAME
 !/
 !/ local parameters 
 !/      
