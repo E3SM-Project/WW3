@@ -363,6 +363,7 @@
                           XFC, XFLT, XREL, XFT, FXFM, FXPM, DDEN,     &
                           FTE, FTF, FHMAX, ECOS, ESIN, IICEDISP,      &
                           ICESCALES, IICESMOOTH
+      USE W3GDATMD, ONLY: IC4_NUMERICS
       USE W3GDATMD, ONLY: FSSOURCE, optionCall
       USE W3GDATMD, ONLY: B_JGS_NLEVEL, B_JGS_SOURCE_NONLINEAR
 !/REF1 USE W3GDATMD, ONLY: IOBP, IOBPD, IOBDP, GTYPE, UNGTYPE, REFPARS
@@ -497,7 +498,7 @@
 !/IC1                                 VSIC(NSPEC), VDIC(NSPEC),            &
 !/IC2                                 VSIC(NSPEC), VDIC(NSPEC),            &
 !/IC3                                 VSIC(NSPEC), VDIC(NSPEC),            &
-!/IC4                                 VSIC(NSPEC), VDIC(NSPEC),            &
+!/IC4                                 VSIC(NSPEC), VDIC(NSPEC),            &                                         
 !/IC5                                 VSIC(NSPEC), VDIC(NSPEC),            &
 !/DB1                                 VSDB(NSPEC), VDDB(NSPEC),            &
 !/DBX                                 VSDB(NSPEC), VDDB(NSPEC),            &
@@ -872,6 +873,13 @@
 !/UOST        CALL UOST_SRCTRMCOMPUTE(IX, IY, SPEC, CG1, DT,            &
 !/UOST                                       U10ABS, U10DIR, VSUO, VDUO)
 !
+
+! new location for dissipation due to ice if running with IC4 - numerics fix
+!/IC4     IF (IC4_NUMERICS) THEN
+!/IC4        IF (ICE .GT. 0) CALL W3SIC4 ( SPEC,DEPTH, CG1,               &
+!/IC4                                      IX, IY, VSIC, VDIC )
+!/IC4     ENDIF        
+!         
 ! 2.f Additional sources.
 !
 !/XXX        CALL W3SXXX
@@ -928,6 +936,8 @@
           VDIN(1:NSPECH) = ICESCALEIN * VDIN(1:NSPECH)
           VSDS(1:NSPECH) = ICESCALEDS * VSDS(1:NSPECH)
           VDDS(1:NSPECH) = ICESCALEDS * VDDS(1:NSPECH)
+!/IC4      IF( IC4_NUMERICS )  VSIC(1:NSPECH) = ICE        * VSIC(1:NSPECH) ! (see Rogers et al 2016) 
+!/IC4      IF( IC4_NUMERICS )  VDIC(1:NSPECH) = ICE        * VDIC(1:NSPECH) !   ^         
           END IF
 !
         VS = 0
@@ -941,8 +951,9 @@
 !/BS1          VS(IS) = VS(IS) + VSBS(IS)
 !/BSX          VS(IS) = VS(IS) + VSBS(IS)
 !/XXX          VS(IS) = VS(IS) + VSXX(IS)
-!/UOST         VS(IS) = VS(IS) + VSUO(IS)
-          VD(IS) =  VDIN(IS) + VDNL(IS)  &
+!/UOST          VS(IS) = VS(IS) + VSUO(IS)
+!/IC4          IF ( IC4_NUMERICS .AND. ICE.GT.0. ) VS(IS) = VS(IS) + VSIC(IS)         
+           VD(IS) =  VDIN(IS) + VDNL(IS)  &
                  + VDDS(IS) + VDBT(IS) 
 !/ST6          VD(IS) = VD(IS) + VDWL(IS)
 !/TR1          VD(IS) = VD(IS) + VDTR(IS)
@@ -950,7 +961,8 @@
 !/BS1          VD(IS) = VD(IS) + VDBS(IS)
 !/BSX          VD(IS) = VD(IS) + VDBS(IS)
 !/XXX          VD(IS) = VD(IS) + VDXX(IS)
-!/UOST         VD(IS) = VD(IS) + VDUO(IS)
+!/UOST          VD(IS) = VD(IS) + VDUO(IS)
+!/IC4             IF ( IC4_NUMERICS .AND. ICE.GT.0. ) VD(IS) = VD(IS) + VDIC(IS)         
           DAMAX  = MIN ( DAM(IS) , MAX ( XREL*SPECINIT(IS) , AFILT ) )
           AFAC   = 1. / MAX( 1.E-10 , ABS(VS(IS)/DAMAX) )
           DT     = MIN ( DT , AFAC / ( MAX ( 1.E-10,                  &
@@ -964,6 +976,7 @@
 !        IF (IX == DEBUG_NODE) WRITE(*,*) 'TIMINGS 1', DT 
         DT     = MAX ( 0.5, DT )                   ! Here we have a hardlimit, which is not too usefull, at least not as a fixed constant
 !
+!/IC4           IF ( IC4_NUMERICS .AND. ICE .GT. 0.01 .and. ICE .LT. 0.95) DT=DTMIN ! always use a small timestep in ice        
         DTDYN  = DTDYN + DT
 !/T        DTRAW  = DT
         IDT    = 1 + INT ( 0.99*(DTG-DTTOT)/DT ) ! number of iterations 
@@ -1139,6 +1152,12 @@
              / MAX ( 1. , (1.-HDT*VDBT(IS))) ! semi-implict integration scheme
            PHINL = PHINL + VSNL(IS)* DT * FACTOR                      &
              / MAX ( 1. , (1.-HDT*VDNL(IS))) ! semi-implict integration scheme
+!/IC4              IF ( IC4_NUMERICS .AND. ICE.GT.0 ) THEN
+!/IC4                 PHICE = PHICE + VSIC(IS) * DT * FACTOR                  &
+!/IC4                           / MAX ( 1. , (1.-HDT*VDIC(IS))) ! semi-implicit integration
+!/IC4                 TAUICE(:) = TAUICE(:) - FACTOR2*COSI(:)*VSIC(IS) * DT   &
+!/IC4                           / MAX ( 1. , (1.-HDT*VDIC(IS)))     
+!/IC4              ENDIF    
            IF (VSIN(IS).GT.0.) WHITECAP(3) = WHITECAP(3) + SPEC(IS)  * FACTOR
            HSTOT = HSTOT + SPEC(IS) * FACTOR
            END DO
@@ -1336,6 +1355,9 @@
 !
       TAUOX=(GRAV*MWXFINISH+TAUWIX-TAUBBL(1))/DTG
       TAUOY=(GRAV*MWYFINISH+TAUWIY-TAUBBL(2))/DTG
+!/IC4     IF (IC4_NUMERICS ) TAUICE(:)=TAUICE(:)/DTG
+!/IC4     IF (IC4_NUMERICS ) TAUOX = TAUOX - TAUICE(1)
+!/IC4     IF (IC4_NUMERICS ) TAUOY = TAUOY - TAUICE(2)      
       TAUWIX=TAUWIX/DTG
       TAUWIY=TAUWIY/DTG
       TAUWNX=TAUWNX/DTG
@@ -1350,6 +1372,7 @@
       PHIAW =DWAT*GRAV*PHIAW /DTG        
       PHINL =DWAT*GRAV*PHINL /DTG  
       PHIBBL=DWAT*GRAV*PHIBBL/DTG        
+!/IC4    IF (IC4_NUMERICS )  PHICE =-1.*DWAT*GRAV*PHICE/DTG
 ! 
 ! 10.1  Adds ice scattering and dissipation: implicit integration---------------- *
 !     INFLAGS2(4) is true if ice concentration was ever read during  
@@ -1358,14 +1381,28 @@
 !/DEBUGSRC     IF (IX .eq. DEBUG_NODE) THEN
 !/DEBUGSRC       WRITE(740+IAPROC,*) '3 : sum(SPEC)=', sum(SPEC)
 !/DEBUGSRC     END IF
-
+! The following section of code should only get used for any IC
+! switch EXCEPT if IC4_NUMERICS = .true. 
       IF ( INFLAGS2(4).AND.ICE.GT.0 ) THEN 
 
          IF (IICEDISP) THEN 
-           ICECOEF2 = 1E-6
-           CALL LIU_FORWARD_DISPERSION (ICEH,ICECOEF2,DEPTH, &
-                                        SIG,WN_R,CG_ICE,ALPHA_LIU)
-!
+!/IC1           ICECOEF2 = 1E-6
+!/IC1           CALL LIU_FORWARD_DISPERSION (ICEH,ICECOEF2,DEPTH, &
+!/IC1                  SIG,WN_R,CG_ICE,ALPHA_LIU)
+!/IC2           ICECOEF2 = 1E-6
+!/IC2           CALL LIU_FORWARD_DISPERSION (ICEH,ICECOEF2,DEPTH, &
+!/IC2                  SIG,WN_R,CG_ICE,ALPHA_LIU)
+!/IC3           ICECOEF2 = 1E-6
+!/IC3           CALL LIU_FORWARD_DISPERSION (ICEH,ICECOEF2,DEPTH, &
+!/IC3                  SIG,WN_R,CG_ICE,ALPHA_LIU)
+
+! orig place of IC4 calls 
+!/IC4     IF (.not. IC4_NUMERICS ) THEN
+!/IC4            ICECOEF2 = 1E-6
+!/IC4            CALL LIU_FORWARD_DISPERSION (ICEH,ICECOEF2,DEPTH, &
+!/IC4                  SIG,WN_R,CG_ICE,ALPHA_LIU)
+!/IC4     ENDIF  
+
       IF (IICESMOOTH) THEN
 !/IS2   DO IK=1,NK
 !/IS2     SMOOTH_ICEDISP=0. 
@@ -1374,13 +1411,22 @@
 !/IS2       END IF
 !/IS2     WN_R(IK)=WN1(IK)*(1-SMOOTH_ICEDISP)+WN_R(IK)*(SMOOTH_ICEDISP)
 !/IS2     END DO
-        END IF
-     ELSE
-      WN_R=WN1
-      CG_ICE=CG1
-     END IF
+      END IF ! end icesmooth
+     ELSE ! iicedisp 
+!/IC1      WN_R=WN1
+!/IC1      CG_ICE=CG1
+!/IC2      WN_R=WN1
+!/IC2      CG_ICE=CG1
+!/IC3      WN_R=WN1
+!/IC3      CG_ICE=CG1
+!/IC4      IF (.not. IC4_NUMERICS ) WN_R=WN1
+!/IC4      IF (.not. IC4_NUMERICS ) CG_ICE=CG1
+     END IF ! end icedisp
 !
-     R(:)=1 ! In case IC2 is defined but not IS2
+!/IC1     R(:)=1 ! In case IC2 is defined but not IS2
+!/IC2     R(:)=1 ! In case IC2 is defined but not IS2
+!/IC3     R(:)=1 ! In case IC2 is defined but not IS2
+!/IC4     IF (.not. IC4_NUMERICS ) R(:)=1 ! In case IC2 is defined but not IS2
 !
 !/IC1      CALL W3SIC1 ( SPEC,DEPTH, CG1,       IX, IY, VSIC, VDIC )
 !/IS2      CALL W3SIS2 ( SPEC, DEPTH, ICE, ICEH, ICEF, ICEDMAX, IX, IY, & 
@@ -1389,24 +1435,39 @@
 !/IC2                CALL W3SIC2 ( SPEC, DEPTH, ICEH, ICEF, CG1, WN1,&
 !/IC2                              IX, IY, VSIC, VDIC, WN_R, CG_ICE, ALPHA_LIU, R)
 !/IC3      CALL W3SIC3 ( SPEC,DEPTH, CG1,  WN1, IX, IY, VSIC, VDIC )
-!/IC4      CALL W3SIC4 ( SPEC,DEPTH, CG1,       IX, IY, VSIC, VDIC )
+!/IC4      IF (.not. IC4_NUMERICS ) CALL W3SIC4 ( SPEC,DEPTH, CG1, IX, IY, VSIC, VDIC )
 !/IC5      CALL W3SIC5 ( SPEC,DEPTH, CG1,  WN1, IX, IY, VSIC, VDIC )
 !
 !/IS1      CALL W3SIS1 ( SPEC, ICE, VSIR )
-   SPEC2 = SPEC
+!/IC1   SPEC2 = SPEC
+!/IC2   SPEC2 = SPEC
+!/IC3   SPEC2 = SPEC
+!/IC4   IF (.not. IC4_NUMERICS ) SPEC2 = SPEC
 !
-   TAUICE(:) = 0.
-   PHICE = 0.
-   DO IK=1,NK
-     IS = 1+(IK-1)*NTH 
+!/IC1   TAUICE(:) = 0.
+!/IC2   TAUICE(:) = 0.
+!/IC3   TAUICE(:) = 0.
+!/IC1   PHICE = 0.
+!/IC2   PHICE = 0.
+!/IC3   PHICE = 0.
+!/IC4   IF (.not. IC4_NUMERICS ) PHICE = 0.
+     DO IK=1,NK
+!/IC1     IS = 1+(IK-1)*NTH 
+!/IC2     IS = 1+(IK-1)*NTH 
+!/IC3     IS = 1+(IK-1)*NTH 
+!/IC4     IF (.not. IC4_NUMERICS ) IS = 1+(IK-1)*NTH 
 !
 ! First part of ice term integration: dissipation part 
 !
-     ATT=1.
+!/IC1     ATT=1.
+!/IC2     ATT=1.
+!/IC3     ATT=1.
+!/IC4     IF (.not. IC4_NUMERICS ) ATT=1.
+
 !/IC1             ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IC2             ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IC3             ATT=EXP(ICE*VDIC(IS)*DTG)
-!/IC4             ATT=EXP(ICE*VDIC(IS)*DTG)
+!/IC4             IF (.not. IC4_NUMERICS ) ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IC5             ATT=EXP(ICE*VDIC(IS)*DTG)
 !/IS1             ATT=ATT*EXP(ICE*VDIR(IS)*DTG)
 !/IS2             ATT=ATT*EXP(ICE*VDIR2(IS)*DTG)
@@ -1416,7 +1477,11 @@
 !/IS2!
 !/IS2               ATT=ATT*EXP((ICE*VDIR(IS))*DTG) 
 !/IS2               END IF   
-             SPEC(1+(IK-1)*NTH:NTH+(IK-1)*NTH) = ATT*SPEC2(1+(IK-1)*NTH:NTH+(IK-1)*NTH)
+
+!/IC1             SPEC(1+(IK-1)*NTH:NTH+(IK-1)*NTH) = ATT*SPEC2(1+(IK-1)*NTH:NTH+(IK-1)*NTH)
+!/IC2             SPEC(1+(IK-1)*NTH:NTH+(IK-1)*NTH) = ATT*SPEC2(1+(IK-1)*NTH:NTH+(IK-1)*NTH)
+!/IC3             SPEC(1+(IK-1)*NTH:NTH+(IK-1)*NTH) = ATT*SPEC2(1+(IK-1)*NTH:NTH+(IK-1)*NTH)
+!/IC4             IF (.not. IC4_NUMERICS ) SPEC(1+(IK-1)*NTH:NTH+(IK-1)*NTH) = ATT*SPEC2(1+(IK-1)*NTH:NTH+(IK-1)*NTH)
 !
 ! Second part of ice term integration: scattering including re-distribution in directions
 !
@@ -1444,23 +1509,58 @@
 ! 
 ! 10.2  Fluxes of energy and momentum due to ice effects
 !
-             FACTOR = DDEN(IK)/CG1(IK)                    !Jacobian to get energy in band
-             FACTOR2= FACTOR*GRAV*WN1(IK)/SIG(IK)         ! coefficient to get momentum
-             DO ITH = 1,NTH
-               IS = ITH+(IK-1)*NTH 
-               PHICE = PHICE + (SPEC(IS)-SPEC2(IS)) * FACTOR      
-               COSI(1)=ECOS(IS)
-               COSI(2)=ESIN(IS)
-               TAUICE(:) = TAUICE(:) - (SPEC(IS)-SPEC2(IS))*FACTOR2*COSI(:)
-               END DO
-             END DO
-           PHICE =-1.*DWAT*GRAV*PHICE /DTG        
-           TAUICE(:)=TAUICE(:)/DTG
-           ELSE 
+!/IC1             FACTOR = DDEN(IK)/CG1(IK)                    !Jacobian to get energy in band
+!/IC1             FACTOR2= FACTOR*GRAV*WN1(IK)/SIG(IK)         ! coefficient to get momentum
+!/IC1             DO ITH = 1,NTH
+!/IC1               IS = ITH+(IK-1)*NTH 
+!/IC1               PHICE = PHICE + (SPEC(IS)-SPEC2(IS)) * FACTOR      
+!/IC1               COSI(1)=ECOS(IS)
+!/IC1               COSI(2)=ESIN(IS)
+!/IC1               TAUICE(:) = TAUICE(:) - (SPEC(IS)-SPEC2(IS))*FACTOR2*COSI(:)
+!/IC1               END DO
+!/IC2             FACTOR = DDEN(IK)/CG1(IK)                    !Jacobian to get energy in band
+!/IC2             FACTOR2= FACTOR*GRAV*WN1(IK)/SIG(IK)         ! coefficient to get momentum
+!/IC2             DO ITH = 1,NTH
+!/IC2               IS = ITH+(IK-1)*NTH 
+!/IC2               PHICE = PHICE + (SPEC(IS)-SPEC2(IS)) * FACTOR      
+!/IC2               COSI(1)=ECOS(IS)
+!/IC2               COSI(2)=ESIN(IS)
+!/IC2               TAUICE(:) = TAUICE(:) - (SPEC(IS)-SPEC2(IS))*FACTOR2*COSI(:)
+!/IC2               END DO
+!/IC3             FACTOR = DDEN(IK)/CG1(IK)                    !Jacobian to get energy in band
+!/IC3             FACTOR2= FACTOR*GRAV*WN1(IK)/SIG(IK)         ! coefficient to get momentum
+!/IC3             DO ITH = 1,NTH
+!/IC3               IS = ITH+(IK-1)*NTH 
+!/IC3               PHICE = PHICE + (SPEC(IS)-SPEC2(IS)) * FACTOR      
+!/IC3               COSI(1)=ECOS(IS)
+!/IC3               COSI(2)=ESIN(IS)
+!/IC3               TAUICE(:) = TAUICE(:) - (SPEC(IS)-SPEC2(IS))*FACTOR2*COSI(:)
+!/IC3               END DO
+!/IC4             IF (.not. IC4_NUMERICS ) FACTOR = DDEN(IK)/CG1(IK)                    !Jacobian to get energy in band
+!/IC4             IF (.not. IC4_NUMERICS ) FACTOR2= FACTOR*GRAV*WN1(IK)/SIG(IK)         ! coefficient to get momentum
+!/IC4             IF (.not. IC4_NUMERICS ) THEN
+!/IC4               DO ITH = 1,NTH
+!/IC4                 IS = ITH+(IK-1)*NTH 
+!/IC4                 PHICE = PHICE + (SPEC(IS)-SPEC2(IS)) * FACTOR      
+!/IC4                 COSI(1)=ECOS(IS)
+!/IC4                 COSI(2)=ESIN(IS)
+!/IC4                 TAUICE(:) = TAUICE(:) - (SPEC(IS)-SPEC2(IS))*FACTOR2*COSI(:)
+!/IC4                 END DO
+!/IC4               ENDIF
+             END DO !ik
+!/IC1           PHICE =-1.*DWAT*GRAV*PHICE /DTG        
+!/IC1           TAUICE(:)=TAUICE(:)/DTG
+!/IC2           PHICE =-1.*DWAT*GRAV*PHICE /DTG        
+!/IC2           TAUICE(:)=TAUICE(:)/DTG
+!/IC3           PHICE =-1.*DWAT*GRAV*PHICE /DTG        
+!/IC3           TAUICE(:)=TAUICE(:)/DTG
+!/IC4           IF (.not. IC4_NUMERICS ) PHICE =-1.*DWAT*GRAV*PHICE /DTG        
+!/IC4           IF (.not. IC4_NUMERICS ) TAUICE(:)=TAUICE(:)/DTG
+           ELSE !  INFLAGS2(4).AND.ICE.GT.0 
 !/IS2             IF (IS2PARS(10).LT.0.5) THEN 
 !/IS2               ICEF = 0. 
 !/IS2             ENDIF 
-           END IF
+           END IF !  INFLAGS2(4).AND.ICE.GT.0 
 !
 ! 
 ! - - - - - - - - - - - - - - - - - - - - - -

@@ -707,6 +707,7 @@
 
 !/IC4  INTEGER                 :: IC4METHOD
 !/IC4  REAL                    :: IC4KI(NIC4), IC4FC(NIC4)
+!/IC4  LOGICAL                 :: IC4NUMERICS
 !
 !/IC5  REAL                    :: IC5MINIG, IC5MINWT,                  &
 !/IC5                             IC5MAXKRATIO, IC5MAXKI, IC5MINHW,    &
@@ -848,7 +849,7 @@
 !/IC3                      IC2SMOOTH, IC2VISC, IC2TURBS, IC3MAXCNC,      &
 !/IC3                      IC3CHENG, USECGICE, IC3HILIM, IC3KILIM,      &
 !/IC3                      IC3VISC, IC3ELAS, IC3DENS, IC3HICE
-!/IC4      NAMELIST /SIC4/  IC4METHOD, IC4KI, IC4FC
+!/IC4      NAMELIST /SIC4/  IC4METHOD, IC4NUMERICS, IC4KI, IC4FC
 !/IC5      NAMELIST /SIC5/  IC5MINIG, IC5MINWT, IC5MAXKRATIO,        &
 !/IC5                       IC5MAXKI, IC5MINHW, IC5MAXITER, IC5RKICK,&
 !/IC5                       IC5KFILTER, IC5VEMOD
@@ -2434,6 +2435,7 @@
 !/IC4       IC4METHOD = 1 !switch for methods within IC4
 !/IC4       IC4KI=0.0
 !/IC4       IC4FC=0.0
+!/IC4       IC4NUMERICS=.FALSE.
 !
 !/IC5       IC5MINIG      = 1.
 !/IC5       IC5MINWT      = 0.
@@ -4752,6 +4754,7 @@
 !/IC4      IC4PARS(1)=IC4METHOD
 !/IC4      IC4_KI=IC4KI
 !/IC4      IC4_FC=IC4FC
+!/IC4      IC4_NUMERICS=IC4NUMERICS
 !
 !/IC5       IC5PARS(:)=0.
 !/IC5       IC5PARS(1)=IC5MINIG
