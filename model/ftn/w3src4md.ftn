@@ -206,7 +206,9 @@
       AMAX   = 0.
       DLWMEAN =0.
       ELCS =0.
-      ELSN =0.
+      ELSN =1.0e-15
+       ! initalize this to a small non-zero value to avoid 'divide by
+       ! zero' error in ATAN2 Calcualtion of DLWMEAN below 
 !
 ! 1.  Integral over directions and maximum --------------------------- *
 !
@@ -1733,7 +1735,9 @@
           MSSP   = 0.
           MSSPC2 = 0.
           MSSPS2 = 0.
-          MSSPCS = 0.
+          MSSPCS = 1.0e-15 
+         ! initalize this to a small, non-zero value to avoid 'divide by
+         ! zero' error in ATAN2 Calcualtion of MSSD below. 
 !
 ! Sums the contributions to the directional MSS for all ITH   
 !

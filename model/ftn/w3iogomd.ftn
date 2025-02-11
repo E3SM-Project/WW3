@@ -1278,7 +1278,9 @@
       ETY    = 0.
       ETXX   = 0.
       ETYY   = 0.
-      ETXY   = 0.
+      ETXY   = 1.0e-15
+      !initalizing this to small non-zero value to avoid 'divide by
+      !zero' error in ATAN2 Calcualtion below 
       ABR    = 0.
       ABA    = 0.
       ABD    = 0.
@@ -1374,7 +1376,9 @@
         ABXX   = 0.
         ABYY   = 0.
         ABXY   = 0.
-        ABYX   = 0.
+        ABYX   = 1.0e-15
+        ! initalizing this to small non-zero value to avoid 'divide by
+        ! zero' error in ATAN2 Calcualtion below
         ABST   = 0.
 !
 ! 2.b Integrate energy in band
