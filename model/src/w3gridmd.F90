@@ -4157,8 +4157,8 @@
        ELSE
          ALLOCATE(XUGRDIN(NX*NY),YUGRDIN(NX*NY))
          DO IX = 1,NX*NY
-           XUGRDIN(IX) = XYB(IX,1)
-           YUGRDIN(IX) = XYB(IX,2)
+           XUGRDIN(IX) = XGRD(1,IX)
+           YUGRDIN(IX) = YGRD(1,IX)
          ENDDO
          CALL W3EQTOLL(YUGRDIN, XUGRDIN, StdLat, StdLon, AnglDin, &
                        PoLat, PoLon, NX*NY )
