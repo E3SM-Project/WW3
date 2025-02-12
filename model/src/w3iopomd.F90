@@ -320,9 +320,13 @@
 #endif
 !
 #ifdef W3_RTD
- !!   Need to wrap rotated Elon values greater than X0.  JGLi12Jun2012
-          XPT(IPT) = MOD( EquLon(IPT)+360.0, 360.0 )
-          IF( XPT(IPT) .LT. X0 )  XPT(IPT) = XPT(IPT) + 360.0
+          IF (GTYPE .NE. UNGTYPE) THEN
+  !!   Need to wrap rotated Elon values greater than X0.  JGLi12Jun2012
+            XPT(IPT) = MOD( EquLon(IPT)+360.0, 360.0 )
+            IF( XPT(IPT) .LT. X0 )  XPT(IPT) = XPT(IPT) + 360.0
+          ELSE
+            IF (XPT(IPT) > 180.0)  XPT(IPT) = XPT(IPT) - 360.0
+          ENDIF
 #endif
 !
 !     Check if point within grid and compute interpolation weights
@@ -680,7 +684,7 @@
 !/ ------------------------------------------------------------------- /
       USE CONSTANTS
       USE W3GDATMD, ONLY: NK, NTH, SIG, NX, NY, NSEA, NSEAL,          &
-                          MAPSTA, MAPFS
+                          MAPSTA, MAPFS, GTYPE, UNGTYPE
 #ifdef W3_RTD
  !!   Use spectral rotation sub and angle.  JGLi12Jun2012
       USE W3GDATMD, ONLY: NSPEC, AnglD, FLAGUNR
@@ -746,6 +750,7 @@
       REAL                    :: TAUX, TAUY
 #endif
       INTEGER                 :: JSEA, ISEA
+      INTEGER                 :: NND
 #ifdef W3_T
       REAL                    :: SPTEST(NK,NTH)
 #endif
@@ -790,7 +795,14 @@
         RDS    = 0.
         RDI    = 0.
 !
-        DO J=1, 4
+        IF (GTYPE .NE. UNGTYPE) THEN
+          NND = 4
+        ELSE
+          NND = 3
+        ENDIF
+
+
+        DO J=1, NND
           IS(J)  = MAPFS (IY(J),IX(J))
           IM(J)  = MAPSTA(IY(J),IX(J))
           IF ( IM(J).GT.0 ) THEN

@@ -37,7 +37,7 @@
 !/
 
       USE W3GDATMD, ONLY: GRID, SGRD, GRIDS, SGRDS
-      USE W3ODATMD, ONLY: NDSO, NDSE
+      USE W3ODATMD, ONLY: NDSO, NDSE, IAPROC, NAPOUT
       USE W3SERVMD, ONLY: EXTCDE
 #ifdef W3_S
       USE W3SERVMD, ONLY: STRACE
@@ -171,12 +171,14 @@
         !  warning the user that for cells too small UOST may be inaccurate
         CGMAX = 20 ! simply taking a high value for the max group velocity to give an indication of this threshold
         MINSIZE = CGMAX*GRD%DTMAX/1000
-        WRITE(NDSO,*)'*** WAVEWATCH-III WARNING IN W3UOST/UOST_INITGRID'
-        WRITE(NDSO,*)'UOST: grid ',TRIM(GRD%GNAME),':'
-        WRITE(NDSO,*)'      global time step == ', GRD%DTMAX, ' s'
-        WRITE(NDSO,*)'      FOR CELLS SMALLER THAN ABOUT ', MINSIZE,    &
-                  ' KM UOST MAY UNDERESTIMATE THE DISSIPATION'
-        WRITE(NDSO,*)
+        IF (IAPROC .EQ. NAPOUT) THEN
+          WRITE(NDSO,*)'*** WAVEWATCH-III WARNING IN W3UOST/UOST_INITGRID'
+          WRITE(NDSO,*)'UOST: grid ',TRIM(GRD%GNAME),':'
+          WRITE(NDSO,*)'      global time step == ', GRD%DTMAX, ' s'
+          WRITE(NDSO,*)'      FOR CELLS SMALLER THAN ABOUT ', MINSIZE,    &
+                    ' KM UOST MAY UNDERESTIMATE THE DISSIPATION'
+          WRITE(NDSO,*)
+        ENDIF
       ENDIF
       END SUBROUTINE UOST_INITGRID
 
@@ -342,8 +344,10 @@
                 'FILE '//FILENAME(:J)//' NOT FOUND. QUITTING'
         CALL EXTCDE (9999) 
       ENDIF  
-      WRITE(NDSO,*)'FILE '//FILENAME(:J)//' FOUND.'// &  
-             'LOADING UOST SETTINGS FOR GRID '//GRD%GNAME
+      IF (IAPROC .EQ. NAPOUT) THEN
+        WRITE(NDSO,*)'FILE '//FILENAME(:J)//' FOUND.'// &  
+               'LOADING UOST SETTINGS FOR GRID '//GRD%GNAME
+      ENDIF
   
       CALL LOAD_ALPHABETA_FROMFILE(FILEUNIT, FILENAME(:J), GRD%NX, GRD%NY, SGD%NK, SGD%NTH,&
         GRD%UOSTABMULTFACTOR, GRD%UOSTLOCALALPHA, GRD%UOSTLOCALBETA,&
@@ -360,8 +364,10 @@
                 'FILE '//FILENAME(:J)//' NOT FOUND. QUITTING'
         CALL EXTCDE (9999)
       ENDIF  
-      WRITE(NDSO,*)'FILE '//FILENAME(:J)//' FOUND.'//& 
-              'LOADING UOST SETTINGS FOR GRID '//GRD%GNAME
+      IF (IAPROC .EQ. NAPOUT) THEN
+        WRITE(NDSO,*)'FILE '//FILENAME(:J)//' FOUND.'//& 
+                'LOADING UOST SETTINGS FOR GRID '//GRD%GNAME
+      ENDIF
   
       CALL LOAD_ALPHABETA_FROMFILE(FILEUNIT, FILENAME(:J), GRD%NX, GRD%NY, SGD%NK, SGD%NTH,&
         GRD%UOSTABMULTFACTOR, GRD%UOSTSHADOWALPHA, GRD%UOSTSHADOWBETA,&

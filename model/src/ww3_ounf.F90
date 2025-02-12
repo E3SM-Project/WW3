@@ -971,8 +971,8 @@
       REAL,DIMENSION(:,:),  ALLOCATABLE  :: LON2D, LAT2D, ANGLD2D
 #ifdef W3_RTD
       REAL,DIMENSION(:,:),  ALLOCATABLE  :: LON2DEQ, LAT2DEQ
+      REAL,DIMENSION(:),  ALLOCATABLE    :: LONEQ, LATEQ, ANGLED
 #endif
-      ! Make the below allocatable to avoid stack overflow on some machines
       REAL, ALLOCATABLE       :: X1(:,:), X2(:,:), XX(:,:), XY(:,:),   &
                                  XK(:,:,:), XXK(:,:,:), XYK(:,:,:),    &
                                  MX1R(:,:), MXXR(:,:), MYYR(:,:),      &
@@ -2228,11 +2228,15 @@
                   ! instanciates lon with x/lon for regular grid or nodes for unstructured mesh
                   IF (.NOT.ALLOCATED(LON)) ALLOCATE(LON(NX))
 #ifdef W3_RTD
-                  ! 2d longitude array for standard grid coordinates
-                  IF ( RTDL .AND. .NOT.ALLOCATED(LON2D)) &
-                    ALLOCATE(LON2D(NX,NY),LON2DEQ(NX,NY),ANGLD2D(NX,NY))
+                       !! 2d longitude array for standard grid coordinates
+                       !IF ( RTDL .AND. .NOT.ALLOCATED(LON2D)) &
+                       !  ALLOCATE(LON2D(NX,NY),LON2DEQ(NX,NY),ANGLD2D(NX,NY))
+                     ! 2d longitude array for standard grid coordinates
+                     IF (GTYPE.EQ.RLGTYPE) THEN
+                       IF (.NOT.ALLOCATED(LON2D)) ALLOCATE(LON2D(NX,NY),LON2DEQ(NX,NY),ANGLD2D(NX,NY))
+                     ENDIF
 #endif
-                  IF (.NOT.ALLOCATED(LAT)) THEN
+                  IF (.NOT.ALLOCATED(LAT)) THEN 
                     ! If regular grid, instanciates lat with y/lat
                     IF (GTYPE.EQ.RLGTYPE) THEN
                       ALLOCATE(LAT(NY))
@@ -2362,9 +2366,21 @@
               END IF
 
               ! If unstructured mesh
-              IF (GTYPE.EQ.UNGTYPE) THEN
-                LON(:)=XGRD(1,:)
-                LAT(:)=YGRD(1,:)
+              IF (GTYPE.EQ.UNGTYPE) THEN 
+#ifdef W3_RTD
+                ALLOCATE(ANGLED(NX),LONEQ(NX),LATEQ(NX))
+                LONEQ(:)=XYB(:,1) 
+                LATEQ(:)=XYB(:,2)
+                CALL W3EQTOLL(LATEQ, LONEQ, LAT, LON, &
+                              ANGLED, POLAT, POLON, NX)                
+
+                DEALLOCATE(ANGLED,LONEQ,LATEQ)
+                DO I = 1,NX
+                  IF (LON(I) > 180.0) THEN
+                    LON(I) = LON(I) - 360.0
+                  ENDIF
+                ENDDO
+#endif
                 DIMLN(2)=NX
                 DIMLN(3)=NTRI
                 IF(FL_DEFAULT_GBL_META) THEN

@@ -182,7 +182,7 @@ CONTAINS
 !/ Parameter list
 !/
       INTEGER, INTENT(IN)                :: NDS
-      CHARACTER(60), INTENT(IN)          :: FNAME
+      CHARACTER(160), INTENT(IN)          :: FNAME
 !/
 !/ local parameters 
 !/      
@@ -441,7 +441,7 @@ CONTAINS
 !/ Parameter list
 !/
       INTEGER, INTENT(IN)                :: NDS
-      CHARACTER(60), INTENT(IN)          :: FNAME
+      CHARACTER(160), INTENT(IN)         :: FNAME
 !/
 !/ local parameters 
 !/      
@@ -2812,7 +2812,7 @@ END SUBROUTINE
       REAL(KIND=8), PARAMETER :: THR    = TINY(1.)
       INTEGER                 :: I1, I2, I3
       INTEGER                 :: ITMP(NX), NEXTVERT(NX), PREVVERT(NX)
-      CHARACTER(60) :: FNAME
+      CHARACTER(160) :: FNAME
 #ifdef W3_S
       INTEGER, SAVE           :: IENT = 0
 #endif

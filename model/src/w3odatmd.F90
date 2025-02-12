@@ -557,7 +557,7 @@
 !/
       CONTAINS
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE W3NOUT ( NDSERR, NDSTST )
+      SUBROUTINE W3NOUT ( NDSERR, NDSTST, NDSOUT)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -630,11 +630,12 @@
 !/ Parameter list
 !/
       INTEGER, INTENT(IN)     :: NDSERR, NDSTST
+      INTEGER, INTENT(IN), OPTIONAL :: NDSOUT 
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: I, NLOW, J
+      INTEGER                 :: I, NLOW, J, UNUM
 #ifdef W3_S
       INTEGER, SAVE           :: IENT = 0
 #endif
@@ -663,12 +664,19 @@
 ! -------------------------------------------------------------------- /
 ! 3.  Initialize parameters
 !
+
+      IF (PRESENT(NDSOUT)) THEN
+        UNUM = NDSOUT
+      ELSE
+        UNUM = 6
+      ENDIF
+
       DO I=NLOW, NGRIDS
 !
-        OUTPTS(I)%NDSO   = 6
-        OUTPTS(I)%NDSE   = 6
-        OUTPTS(I)%NDST   = 6
-        OUTPTS(I)%SCREEN = 6
+        OUTPTS(I)%NDSO   = UNUM 
+        OUTPTS(I)%NDSE   = UNUM
+        OUTPTS(I)%NDST   = UNUM
+        OUTPTS(I)%SCREEN = UNUM
 !
         OUTPTS(I)%NTPROC = 1
         OUTPTS(I)%NAPROC = 1

@@ -678,11 +678,15 @@
       IFT    = LEN_TRIM(TFILE)
       J      = LEN_TRIM(FNMPRE)
 !
-      IF ( OUTPTS(IMOD)%IAPROC .EQ. OUTPTS(IMOD)%NAPLOG )             &
+      IF ( OUTPTS(IMOD)%IAPROC .EQ. OUTPTS(IMOD)%NAPLOG ) THEN
 #ifdef W3_DEBUGINIT
        WRITE(*,*) '1: w3initmd f=', TRIM(FNMPRE(:J)//LFILE(:IFL))
 #endif
-          OPEN (MDS(1),FILE=FNMPRE(:J)//LFILE(:IFL),ERR=888,IOSTAT=IERR)
+          INQUIRE(UNIT=MDS(1), OPENED=OPENED)
+          IF (.NOT. OPENED) THEN
+            OPEN (MDS(1),FILE=FNMPRE(:J)//LFILE(:IFL),ERR=888,IOSTAT=IERR)
+          ENDIF
+      ENDIF
 !
       IF ( MDS(3).NE.MDS(1) .AND. MDS(3).NE.MDS(4) .AND. TSTOUT ) THEN
           INQUIRE (MDS(3),OPENED=OPENED)
@@ -1135,7 +1139,7 @@
 #ifdef W3_TIMINGS
        CALL PRINT_MY_TIME("Before W3IORS")
 #endif
-      CALL W3IORS ( 'READ', NDS(6), SIG(NK), IMOD)
+      CALL W3IORS ( 'READ', NDS(6), SIG(NK), IMOD, .FALSE.)
 #ifdef W3_TIMINGS
        CALL PRINT_MY_TIME("After W3IORS")
 #endif

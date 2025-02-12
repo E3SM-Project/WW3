@@ -64,6 +64,7 @@
 !/ Specify default accessibility
 !/
       PUBLIC
+      REAL*8 , ALLOCATABLE :: GRID_AREA(:)
 !/
 !/ Module private variable for checking error returns
 !/
@@ -839,6 +840,40 @@
             END DO
           END IF
         END DO
+
+        ! Calculate area of cell
+        ALLOCATE(GRID_AREA(MNP))
+        DO I1=1,MNP
+          GRID_AREA(I1) = 0.0
+          NB=NBASSIGNEDCORNER(I1)
+          DO I2=1,NB
+            I3 = MOD(I2,NB)+1
+            PT(1,1)=GRID_CENTER_LON(I1)
+            PT(2,1)=GRID_CORNER_LON(I2,I1)
+            PT(3,1)=GRID_CORNER_LON(I3,I1)
+            PT(1,2)=GRID_CENTER_LAT(I1)
+            PT(2,2)=GRID_CORNER_LAT(I2,I1)
+            PT(3,2)=GRID_CORNER_LON(I3,I1)
+
+            CALL FIX_PERIODCITY(PT)
+
+            ELON1 = PT(1,1)
+            ELON2 = PT(2,1)
+            ELON3 = PT(3,1)
+            ELAT1 = PT(1,2)
+            ELAT2 = PT(2,2)
+            ELAT3 = PT(3,2)
+
+            DELTALON12=ELON2 - ELON1
+            DELTALON13=ELON3 - ELON1
+            DELTALAT12=ELAT2 - ELAT1
+            DELTALAT13=ELAT3 - ELAT1
+            THEDET=DELTALON12*DELTALAT13 - DELTALON13*DELTALAT12
+
+            GRID_AREA(I1) = GRID_AREA(I1) + ABS(THEDET)
+          ENDDO
+        ENDDO
+
         DEALLOCATE(NBASSIGNEDCORNER, STAT=ISTAT)
         CHECK_DEALLOC_STATUS ( ISTAT )
         DEALLOCATE(LISTNBCORNER, STAT=ISTAT)
