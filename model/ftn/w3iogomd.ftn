@@ -1891,6 +1891,7 @@
               ENDIF
 !
 !  Add here USERO(JSEA,1) ...
+           USERO(JSEA,1) = Z0(JSEA)
 !
           END IF
         END DO
