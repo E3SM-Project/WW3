@@ -1176,7 +1176,7 @@
                           SYY, SXY, PHS, PTP, PLP, PDIR, PSI, PWS,    &
                           PWST, PNR, USERO, TUSX, TUSY, PRMS, TPMS,   &
                           USSX, USSY, MSSX, MSSY, MSSD, MSCX, MSCY,   &
-                          MSCD, CHARN,                                &
+                          MSCD, CHARN, Z0,                            &
                           BHD, CGE, P2SMS, US3D, EF, TH1M, STH1M,     &
                           TH2M, STH2M, HSIG, STMAXE, STMAXD,          &
                           HCMAXE, HMAXE, HCMAXD, HMAXD, USSP, QP, PQP,&
@@ -1891,7 +1891,7 @@
               ENDIF
 !
 !  Add here USERO(JSEA,1) ...
-           USERO(JSEA,1) = Z0(JSEA)
+            !  USERO(JSEA,1) = 
 !
           END IF
         END DO
@@ -2435,7 +2435,7 @@
                           CFLXYMAX, CFLTHMAX, CFLKMAX, P2SMS, US3D,    &
                           TH1M, STH1M, TH2M, STH2M, HSIG, PHICE, TAUICE,&
                           STMAXE, STMAXD, HMAXE, HCMAXE, HMAXD, HCMAXD,&
-                          USSP, TAUOCX, TAUOCY
+                          USSP, TAUOCX, TAUOCY, Z0
 !/
       USE W3ODATMD, ONLY: NOGRP, NGRPP, IDOUT, UNDEF, NDST, NDSE,     &
                           FLOGRD, IPASS => IPASS1, WRITE => WRITE1,   &
@@ -2716,6 +2716,7 @@
                 IF ( FLOGRD( 4,17) ) PNR (ISEA  ) = UNDEF
 !
                 IF ( FLOGRD( 5, 2) ) CHARN (ISEA) = UNDEF
+                IF ( FLOGRD( 5, 2) ) Z0 (ISEA) = UNDEF
                 IF ( FLOGRD( 5, 3) ) CGE   (ISEA) = UNDEF
                 IF ( FLOGRD( 5, 4) ) PHIAW (ISEA) = UNDEF
                 IF ( FLOGRD( 5, 5) ) THEN
@@ -3015,6 +3016,7 @@
                     WRITE ( NDSOG ) AUX2
                   ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 2 ) THEN
                     WRITE ( NDSOG ) CHARN(1:NSEA)
+                    WRITE ( NDSOG ) Z0(1:NSEA)
                   ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 3 ) THEN
                     WRITE ( NDSOG ) CGE(1:NSEA)
                   ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 4 ) THEN
@@ -3320,6 +3322,8 @@
                   ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 2 ) THEN
                     READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
                                                          CHARN(1:NSEA)
+                    READ (NDSOG,END=801,ERR=802,IOSTAT=IERR)         &
+                                                         Z0(1:NSEA)
                   ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 3 ) THEN
                     READ (NDSOG,END=801,ERR=802,IOSTAT=IERR) CGE(1:NSEA)
                   ELSE IF ( IFI .EQ. 5 .AND. IFJ .EQ. 4 ) THEN

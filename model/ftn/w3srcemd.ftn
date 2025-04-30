@@ -57,7 +57,8 @@
                           REFLEC, REFLED, DELX, DELY, DELA, TRNX,     &
                           TRNY, BERG, FPI, DTDYN, FCUT, DTG, TAUWX,   &
                           TAUWY, TAUOX, TAUOY, TAUWIX, TAUWIY, TAUWNX,&
-                          TAUWNY, PHIAW, CHARN, TWS, PHIOC, WHITECAP, &
+                          TAUWNY, PHIAW, CHARN, Z0, TWS, PHIOC, &
+                          WHITECAP, &
                           D50, PSIC, BEDFORM , PHIBBL, TAUBBL, TAUICE,&
                           PHICE, TAUOCX, TAUOCY, WNMEAN, DAIR, COEF) 
 !/
@@ -202,6 +203,7 @@
 !       DELY    Real.  I   grid cell size in Y direction  ( !/BS1 )
 !       DELA    Real.  I   grid cell area                 ( !/BS1 )
 !       FPI     Real  I/O  Peak-input frequency.          ( !/ST2 )
+                  ! Z0
 !      WHITECAP R.A.   O   Whitecap statisics             ( !/ST4 )
 !       DTDYN   Real   O   Average dynamic time step.
 !       FCUT    Real   O   Cut-off frequency for tail.
@@ -449,7 +451,7 @@
                                  SPEC(NSPEC), ALPHA(NK), USTAR,       &
                                  USTDIR, FPI, TAUOX, TAUOY,           &
                                  TAUWX, TAUWY, PHIAW, PHIOC, PHICE,   &
-                                 CHARN, TWS, BEDFORM(3), PHIBBL,      &
+                                 CHARN, Z0, TWS, BEDFORM(3), PHIBBL,  &
                                  TAUBBL(2), TAUICE(2), WHITECAP(4),   &
                                  TAUWIX, TAUWIY, TAUWNX, TAUWNY,      &
                                  ICEF, TAUOCX, TAUOCY, WNMEAN
@@ -467,7 +469,7 @@
                                  HDT, ZWND, FP, DEPTH, TAUSCX, TAUSCY, FHIGI 
 ! Scaling factor for SIN, SDS, SNL
       REAL                    :: ICESCALELN, ICESCALEIN, ICESCALENL, ICESCALEDS  
-      REAL                    :: EMEAN, FMEAN, AMAX, CD, Z0, SCAT,    &
+      REAL                    :: EMEAN, FMEAN, AMAX, CD, SCAT,    &
                                  SMOOTH_ICEDISP
       REAL                    :: WN_R(NK), CG_ICE(NK),ALPHA_LIU(NK), ICECOEF2,&
                                  R(NK)
@@ -626,6 +628,7 @@
       NSTEPS = 0
       PHIAW  = 0.
       CHARN  = 0.
+      Z0     = 0.
       TWS    = 0.
       PHINL  = 0.
       PHIBBL = 0.
@@ -1043,7 +1046,7 @@
             ENDIF
             VSIO=VS
             VDIO=VD
-!!/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(10EN15.4)') SUM(VS), SUM(VD), SUM(VSIN), SUM(VDIN), SUM(VSDS), SUM(VDDS), SUM(VSNL), SUM(VDNL)
+!/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(10EN15.4)') SUM(VS), SUM(VD), SUM(VSIN), SUM(VDIN), SUM(VSDS), SUM(VDDS), SUM(VSNL), SUM(VDNL)
 !/DEBUGSRC          IF (IX == DEBUG_NODE) THEN
 !/DEBUGSRC            WRITE(740+IAPROC,*) '     srce_imp_pre : SHAVE = ', SHAVE
 !/DEBUGSRC            WRITE(740+IAPROC,*) '     srce_imp_pre : DT=', DT, ' HDT=', HDT, 'DTG=', DTG
@@ -1093,7 +1096,7 @@
 !          IF (IX == DEBUG_NODE) THEN
 !            WRITE(*,'(A20,I20,F20.10,L20,4F20.10)') 'AFTER', IX, DEPTH, SHAVE, SUM(VS), SUM(VD), SUM(SPEC)
 !          ENDIF
-!!/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(10EN15.4)') SUM(VS), SUM(VD), SUM(VSIN), SUM(VDIN), SUM(VSDS), SUM(VDDS), SUM(VSNL), SUM(VDNL) 
+!/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(10EN15.4)') SUM(VS), SUM(VD), SUM(VSIN), SUM(VDIN), SUM(VSDS), SUM(VDDS), SUM(VSNL), SUM(VDNL) 
 !/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(1EN15.4)') SUM(VSIN)
 !/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(1EN15.4)') SUM(VDIN)
 !/DEBUGSRC          IF (IX == DEBUG_NODE) WRITE(44,'(1EN15.4)') SUM(VSDS)
