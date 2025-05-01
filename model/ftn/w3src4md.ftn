@@ -84,7 +84,7 @@
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SPR4 (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN,     &
                     AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0,&
-                    CHARN, LLWS, FMEANWS, DLWMEAN)
+                    USTAR2, CHARN, LLWS, FMEANWS, DLWMEAN)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III                SHOM |
@@ -127,6 +127,7 @@
 !       TAUWX-Y Real  I   Components of wave-supported stress.
 !       CD      Real  O   Drag coefficient at wind level ZWND.
 !       Z0      Real  O   Corresponding z0.
+!       USTAR2  Real  O   Corresponding z0.
 !       CHARN   Real  O   Corresponding Charnock coefficient
 !       LLWS    L.A.  I   Wind sea true/false array for each component            
 !       FMEANWS Real  O   Mean frequency of wind sea, used for tail 
@@ -179,7 +180,7 @@
       LOGICAL, INTENT(IN)     :: LLWS(NSPEC)
       REAL, INTENT(INOUT)     :: USTAR ,USDIR
       REAL, INTENT(OUT)       :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX,  & 
-                                 CD, Z0, CHARN, FMEANWS, DLWMEAN
+                                 CD, Z0, USTAR2, CHARN, FMEANWS, DLWMEAN
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
@@ -278,6 +279,7 @@
       UNZ    = MAX ( 0.01 , U )
       CD     = (USTAR/UNZ)**2 
       USDIR = UDIR
+      USTAR2 = USTAR
 !
 ! 6.  Final test output ---------------------------------------------- *
 !
