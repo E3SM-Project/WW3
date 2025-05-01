@@ -57,7 +57,7 @@
                           REFLEC, REFLED, DELX, DELY, DELA, TRNX,     &
                           TRNY, BERG, FPI, DTDYN, FCUT, DTG, TAUWX,   &
                           TAUWY, TAUOX, TAUOY, TAUWIX, TAUWIY, TAUWNX,&
-                          TAUWNY, PHIAW, CHARN, Z0, TWS, PHIOC, &
+                          TAUWNY, PHIAW, CHARN, Z0,USTAR2,TWS, PHIOC, &
                           WHITECAP, &
                           D50, PSIC, BEDFORM , PHIBBL, TAUBBL, TAUICE,&
                           PHICE, TAUOCX, TAUOCY, WNMEAN, DAIR, COEF) 
@@ -203,8 +203,9 @@
 !       DELY    Real.  I   grid cell size in Y direction  ( !/BS1 )
 !       DELA    Real.  I   grid cell area                 ( !/BS1 )
 !       FPI     Real  I/O  Peak-input frequency.          ( !/ST2 )
-                  ! Z0
-!      WHITECAP R.A.   O   Whitecap statisics             ( !/ST4 )
+!       Z0      Real  I/O  Roughness length for E3SM coupling
+!       USTAR2  Real  I/O  Friction Vel for E3SM coupling
+!       WHITECAP R.A.   O   Whitecap statisics             ( !/ST4 )
 !       DTDYN   Real   O   Average dynamic time step.
 !       FCUT    Real   O   Cut-off frequency for tail.
 !       DTG     Real   I   Global time step.
@@ -451,7 +452,8 @@
                                  SPEC(NSPEC), ALPHA(NK), USTAR,       &
                                  USTDIR, FPI, TAUOX, TAUOY,           &
                                  TAUWX, TAUWY, PHIAW, PHIOC, PHICE,   &
-                                 CHARN, Z0, TWS, BEDFORM(3), PHIBBL,  &
+                                 CHARN, Z0, USTAR2,                   &
+                                 TWS, BEDFORM(3), PHIBBL,  &
                                  TAUBBL(2), TAUICE(2), WHITECAP(4),   &
                                  TAUWIX, TAUWIY, TAUWNX, TAUWNY,      &
                                  ICEF, TAUOCX, TAUOCY, WNMEAN
@@ -629,6 +631,7 @@
       PHIAW  = 0.
       CHARN  = 0.
       Z0     = 0.
+      USTAR2 = 0.
       TWS    = 0.
       PHINL  = 0.
       PHIBBL = 0.
@@ -698,7 +701,7 @@
 !/ST4      ELSE
 !/ST4        CALL W3SPR4 (SPEC, CG1, WN1, EMEAN, FMEAN, FMEAN1, WNMEAN, &
 !/ST4                   AMAX, U10ABS, U10DIR, USTAR, USTDIR,            &
-!/ST4                   TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS, DLWMEAN)
+!/ST4                   TAUWX, TAUWY, CD, Z0, USTAR2, CHARN, LLWS, FMEANWS, DLWMEAN)
 
 !/DEBUGSRC!/ST4        IF (IX == DEBUG_NODE) THEN
 !/DEBUGSRC!/ST4          WRITE(740+IAPROC,*) '1: out value USTAR=', USTAR, ' USTDIR=', USTDIR
@@ -725,7 +728,7 @@
 
 !/ST4      CALL W3SPR4 (SPEC, CG1, WN1, EMEAN, FMEAN, FMEAN1, WNMEAN, &
 !/ST4                   AMAX, U10ABS, U10DIR, USTAR, USTDIR,          &
-!/ST4                   TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS, DLWMEAN)
+!/ST4                   TAUWX, TAUWY, CD, Z0, USTAR2, CHARN, LLWS, FMEANWS, DLWMEAN)
 !/ST4      TWS = 1./FMEANWS
 !/ST6      CALL W3SPR6 (SPEC, CG1, WN1, EMEAN, FMEAN, WNMEAN, AMAX, FP)  
 !
