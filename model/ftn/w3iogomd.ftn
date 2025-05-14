@@ -1374,7 +1374,7 @@
         ABXX   = 0.
         ABYY   = 0.
         ABXY   = 0.
-        ABYX   = 0.
+        ABYX   = 1.0e-15
         ABST   = 0.
 !
 ! 2.b Integrate energy in band

@@ -207,7 +207,7 @@
       AMAX   = 0.
       DLWMEAN =0.
       ELCS =0.
-      ELSN =0.
+      ELSN =1.0e-15
 !
 ! 1.  Integral over directions and maximum --------------------------- *
 !
@@ -1735,7 +1735,7 @@
           MSSP   = 0.
           MSSPC2 = 0.
           MSSPS2 = 0.
-          MSSPCS = 0.
+          MSSPCS = 1.0e-15
 !
 ! Sums the contributions to the directional MSS for all ITH   
 !
