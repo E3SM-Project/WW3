@@ -121,7 +121,7 @@
       SUBROUTINE W3INIT ( IMOD, IsMulti, FEXT, MDS, MTRACE, ODAT      &
                           , FLGRD,                               &
                            FLGR2, FLGD, FLG2, NPT, XPT, YPT, PNAMES,   &
-                          IPRT, PRTFRM, MPI_COMM, FLAGSTIDEIN)
+                          IPRT, PRTFRM, MPI_COMM, FLAGSTIDEIN, COUPLED_CALENDAR)
 
 !/
 !/                  +-----------------------------------+
@@ -346,7 +346,7 @@
 #ifdef W3_S
       USE W3SERVMD, ONLY: STRACE
 #endif
-      USE W3TIMEMD, ONLY: DSEC21, TICK21, STME21
+      USE W3TIMEMD, ONLY: DSEC21, TICK21, STME21, CALTYPE
       USE W3ARRYMD, ONLY: PRTBLK
 !/
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSTA, MAPST2, MAPFS, &
@@ -434,6 +434,7 @@
       CHARACTER, INTENT(IN)         :: FEXT*(*)
       CHARACTER(LEN=40), INTENT(IN) :: PNAMES(NPT)
       LOGICAL, INTENT(IN), OPTIONAL :: FLAGSTIDEIN(4)
+      CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: COUPLED_CALENDAR
       INTEGER                       :: NSEALout, NSEALMout
 !/
 !/ ------------------------------------------------------------------- /
@@ -748,6 +749,17 @@
 !
 !!/DEBUGMPI     CALL TEST_MPI_STATUS("Case 8")
       CALL W3IOGR ( 'READ', NDS(5), IMOD, FEXT )
+                  IF (PRESENT(COUPLED_CALENDAR)) THEN
+                        SELECT CASE (TRIM(COUPLED_CALENDAR))
+                        CASE ('NO_LEAP')
+                              CALTYPE = '365_day'
+                        CASE ('GREGORIAN')
+                              CALTYPE = 'standard'
+                        CASE DEFAULT
+                              WRITE (NDSE,*) 'Unsupported coupled calendar: ', TRIM(COUPLED_CALENDAR)
+                              CALL EXTCDE (1)
+                        END SELECT
+                  END IF
       IF (GTYPE .eq. UNGTYPE) THEN
         CALL SPATIAL_GRID
         CALL NVECTRI
