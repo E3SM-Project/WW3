@@ -1,6 +1,9 @@
 #include "w3macros.h"
 !/ ------------------------------------------------------------------- /
       MODULE CONSTANTS
+      USE shr_const_mod, ONLY: SHR_CONST_G, SHR_CONST_RHOFW, &
+                               SHR_CONST_RHODAIR, SHR_CONST_KARMAN, &
+                               SHR_CONST_PI, SHR_CONST_REARTH
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -62,16 +65,17 @@
 !/
       LOGICAL, PARAMETER      :: TSTOUT = .FALSE.
 !
-      REAL, PARAMETER         :: GRAV   =    9.806
-      REAL, PARAMETER         :: DWAT   = 1000.
-      REAL, PARAMETER         :: DAIR   =    1.225
+! Keep WW3 constants at default real kind while sourcing their values from E3SM.
+      REAL, PARAMETER         :: GRAV   = REAL(SHR_CONST_G)
+      REAL, PARAMETER         :: DWAT   = REAL(SHR_CONST_RHOFW)
+      REAL, PARAMETER         :: DAIR   = REAL(SHR_CONST_RHODAIR)
       REAL, PARAMETER         :: nu_air  = 1.4E-5        
 !mdo  *** Changing nu_water to be consistent with DWAT=1000 (assumes 10degC)
       REAL, PARAMETER         :: nu_water  = 1.31E-6    !mdo   WAS: 3.E-6        
       REAL, PARAMETER         :: sed_sg  = 2.65        
-      REAL, PARAMETER         :: KAPPA = 0.40       !Von Karman's constant
+      REAL, PARAMETER         :: KAPPA = REAL(SHR_CONST_KARMAN) !Von Karman's constant
 !
-      REAL, PARAMETER         :: PI     = 3.141592653589793
+      REAL, PARAMETER         :: PI     = REAL(SHR_CONST_PI)
       REAL, PARAMETER         :: TPI    = 2.0 * PI
       REAL, PARAMETER         :: HPI    = 0.5 * PI
       REAL, PARAMETER         :: TPIINV = 1. / TPI
@@ -79,7 +83,7 @@
       REAL, PARAMETER         :: RADE   = 180. / PI
       REAL, PARAMETER         :: DERA   = PI / 180.
 !
-      REAL, PARAMETER         :: RADIUS = 4.E7 * TPIINV
+      REAL, PARAMETER         :: RADIUS = REAL(SHR_CONST_REARTH)
 !
       REAL, PARAMETER         :: G2PI3I = 1. / ( GRAV**2 * TPI**3 )
       REAL, PARAMETER         :: G1PI1I = 1. / ( GRAV * TPI )
