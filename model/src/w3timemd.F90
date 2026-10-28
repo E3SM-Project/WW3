@@ -775,6 +775,13 @@
 !/
      INTEGER(KIND=4), PARAMETER :: IGREG=15+31*(10+12*1582)
      INTEGER(KIND=4) ja,jm,jy
+             IF (TRIM(CALTYPE).EQ.'standard') THEN
+                   ja=(14-mm)/12
+                   jy=iyyy+4800-ja
+                   jm=mm+12*ja-3
+                   julday=id+(153*jm+2)/5+365*jy+jy/4-jy/100+jy/400-32045
+                   RETURN
+             END IF
      jy=iyyy
      IF (jy.EQ.0) WRITE(6,*) 'There is no zero year !!'
      IF (jy.LT.0) jy=jy+1
@@ -785,7 +792,7 @@
        jm=mm+13
        ENDIF
      julday=INT(365.25*jy)+int(30.6001*jm)+id+1720995
-     IF (id+31*(mm+12*iyyy).GE.IGREG) THEN
+            IF (id+31*(mm+12*iyyy).GE.IGREG) THEN
        ja=INT(0.01*jy)
        julday=julday+2-ja+INT(0.25*ja)
        END IF
@@ -818,7 +825,19 @@
      INTEGER(KIND=4),    INTENT(out) :: id,mm,iyyy
      INTEGER(KIND=4), PARAMETER :: IGREG=2299161
      INTEGER(KIND=4) ja,jalpha,jb,jc,jd,je
-     if (julian.GE.IGREG) THEN
+             IF (TRIM(CALTYPE).EQ.'standard') THEN
+                   ja=julian+32044
+                   jb=(4*ja+3)/146097
+                   jc=ja-(146097*jb)/4
+                   jd=(4*jc+3)/1461
+                   je=jc-(1461*jd)/4
+                   jalpha=(5*je+2)/153
+                   id=je-(153*jalpha+2)/5+1
+                   mm=jalpha+3-12*(jalpha/10)
+                   iyyy=100*jb+jd-4800+jalpha/10
+                   RETURN
+             END IF
+             if (julian.GE.IGREG) THEN
        jalpha=INT(((julian-1867216)-0.25)/36524.25)
        ja=julian+1+jalpha-INT(0.25*jalpha)
      ELSE
