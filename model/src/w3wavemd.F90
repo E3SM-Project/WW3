@@ -178,6 +178,7 @@
 #endif
 !
       PUBLIC
+      LOGICAL, SAVE :: XY_A2A = .TRUE., XY_A2A_INIT = .FALSE.   
 !/
       CONTAINS
 !/ ------------------------------------------------------------------- /
@@ -452,6 +453,8 @@
 #endif
 !
       IMPLICIT NONE
+      CHARACTER(LEN=8)        :: ENVSTR = ' '
+      INTEGER                 :: IENV
 !
 #ifdef W3_MPI
       INCLUDE "mpif.h"
@@ -2326,6 +2329,15 @@
         FLUSH(740+IAPROC)
 #endif
 !
+          IF ( .NOT. XY_A2A_INIT ) THEN   !
+            CALL GET_ENVIRONMENT_VARIABLE ( 'WW3_XY_ALLTOALL', ENVSTR, STATUS=IENV )
+            IF ( IENV .EQ. 0 .AND. ENVSTR(1:1) .EQ. '0' ) XY_A2A = .FALSE.
+            XY_A2A_INIT = .TRUE.
+            IF ( IAPROC .EQ. NAPOUT ) WRITE (NDSO,*) ' XY alltoallv exchange =', XY_A2A
+          END IF
+          IF ( XY_A2A .AND. GTYPE.EQ.UNGTYPE .AND. .NOT.LPDLIB ) THEN
+            CALL W3XYA2A ( FACX, DTG, VGX, VGY, UGDTUPDATE, MAPSTA, FIELD )
+          ELSE
 #ifdef W3_MPI
        IF ( NRQSG1 .GT. 0 ) THEN
          CALL MPI_STARTALL (NRQSG1, IRQSG1(1,1), IERR_MPI)
@@ -2419,6 +2431,7 @@
          DEALLOCATE ( STATCO )
          END IF
 #endif
+       ENDIF
 
 #ifdef W3_MEMCHECK
        write(40000+IAPROC,*) 'memcheck_____:', 'WW3_WAVE TIME LOOP 17'
@@ -4344,6 +4357,7 @@
 !/
       INTEGER                 :: NMIN, IPROC, NLOC, ISEA, IXY
       INTEGER                 :: JSEA, ISPROC
+      INTEGER, ALLOCATABLE    :: NLOCS(:)
 #ifdef W3_S
       INTEGER, SAVE           :: IENT
 #endif
@@ -4354,29 +4368,24 @@
       CALL STRACE (IENT, 'W3NMIN')
 #endif
 !
-      NMIN   = NSEA
 !
-      DO IPROC=1, NAPROC
-        NLOC   = 0
-        DO ISEA=1, NSEA
-          CALL INIT_GET_JSEA_ISPROC(ISEA, JSEA, ISPROC)
-          IF (ISPROC .eq. IPROC) THEN
-            IXY    = MAPSF(ISEA,3)
-            IF ( MAPSTA(IXY) .EQ. 1 ) NLOC = NLOC + 1
-          END IF
-        END DO
+! single pass over sea points (was a loop over NAPROC x NSEA with a
+! function call per element). Counts per rank are identical, so NMIN and FLAG0 are
+! unchanged.
+!
+      ALLOCATE ( NLOCS(NAPROC) )
+      NLOCS  = 0
 #ifdef W3_SMC
- !!Li   For SMC grid, local sea points are equally NSEA/NAPROC
- !!Li   so the NLOC is overwirte by a constant.
-        NLOC = NSEA/NAPROC
-#endif
-!
-#ifdef W3_T
-        WRITE (NDST,9000) IPROC, NLOC
-#endif
-        NMIN   = MIN ( NMIN , NLOC )
+      NLOCS  = NSEA/NAPROC
+#else
+      DO ISEA=1, NSEA
+        CALL INIT_GET_JSEA_ISPROC(ISEA, JSEA, ISPROC)
+        IXY    = MAPSF(ISEA,3)
+        IF ( MAPSTA(IXY) .EQ. 1 ) NLOCS(ISPROC) = NLOCS(ISPROC) + 1
         END DO
-!
+#endif
+      NMIN   = MINVAL ( NLOCS(1:NAPROC) )
+      DEALLOCATE ( NLOCS )
       FLAG0  = NMIN .EQ. 0
 #ifdef W3_T
       WRITE (NDST,9001) NMIN, FLAG0
@@ -4397,4 +4406,136 @@
 !/
 !/ End of module W3WAVEMD -------------------------------------------- /
 !/
+!/ ------------------------------------------------------------------- /
+      SUBROUTINE W3XYA2A ( FACX, DTG, VGX, VGY, UGDTUPDATE, MAPSTA, FIELD )
+!
+!     gather / propagate / scatter of all locally owned spectral
+!     bins using two MPI_ALLTOALLV calls on the compute communicator, instead
+!     of persistent point-to-point requests per bin (W3GATH/W3SCAT).
+!     Unstructured grids, non-PDLIB only.  Values moved are identical to the
+!     point-to-point path, so results are bit-for-bit.
+!
+      USE W3GDATMD, ONLY: NSPEC, NX, NY, NSEA, NSEAL, MAPSF
+      USE W3WDATMD, ONLY: VA
+      USE W3ADATMD, ONLY: IAPPRO, MPI_COMM_WCMP
+      USE W3ODATMD, ONLY: IAPROC, NAPROC, NDSE, NAPERR
+      USE W3PROFSMD, ONLY: W3XYPUG
+      USE W3PARALL, ONLY: INIT_GET_ISEA
+      USE W3SERVMD, ONLY: EXTCDE
+
+      IMPLICIT NONE
+      INCLUDE "mpif.h"
+      REAL, INTENT(IN)        :: FACX, DTG, VGX, VGY
+      LOGICAL, INTENT(IN)     :: UGDTUPDATE
+      INTEGER, INTENT(IN)     :: MAPSTA(NY*NX)
+      REAL, INTENT(INOUT)     :: FIELD(1-NY:NY*(NX+2))
+      INTEGER, SAVE           :: NLOCB = -1
+      INTEGER, ALLOCATABLE, SAVE :: NSEALP(:), NBINP(:), LOCB(:), ORD(:),  &
+                                    SCNT(:), SDSP(:), RCNT(:), RDSP(:)
+      REAL, ALLOCATABLE, SAVE :: SBUF(:), RBUF(:)
+      INTEGER                 :: IP, ISP, JSEA, ISEA, IXY, K, IB, IERR_MPI
+!
+! 1. One-time setup: who owns what, counts and displacements
+!
+      IF ( NLOCB .LT. 0 ) THEN
+        ALLOCATE ( NSEALP(NAPROC), NBINP(NAPROC), ORD(NSPEC),          &
+                   SCNT(NAPROC), SDSP(NAPROC), RCNT(NAPROC), RDSP(NAPROC) )
+        DO IP=1, NAPROC
+          NSEALP(IP) = MAX ( 0, (NSEA-IP)/NAPROC + 1 )
+          END DO
+        IF ( NSEALP(IAPROC) .NE. NSEAL ) THEN
+          WRITE (NDSE,*) ' W3XYA2A: NSEAL mismatch', IAPROC, NSEAL, NSEALP(IAPROC)
+          CALL EXTCDE ( 991 )
+          END IF
+        NBINP = 0
+        DO ISP=1, NSPEC
+          NBINP(IAPPRO(ISP)) = NBINP(IAPPRO(ISP)) + 1
+          END DO
+        NLOCB = NBINP(IAPROC)
+        ALLOCATE ( LOCB(MAX(1,NLOCB)) )
+        K = 0
+        DO ISP=1, NSPEC
+          IF ( IAPPRO(ISP) .EQ. IAPROC ) THEN
+            K = K + 1
+            LOCB(K) = ISP
+            END IF
+          END DO
+!       bins ordered by owner rank, then by ISP (matches each owner's LOCB order)
+        K = 0
+        DO IP=1, NAPROC
+          DO ISP=1, NSPEC
+            IF ( IAPPRO(ISP) .EQ. IP ) THEN
+              K = K + 1
+              ORD(K) = ISP
+              END IF
+            END DO
+          END DO
+        DO IP=1, NAPROC
+          SCNT(IP) = NBINP(IP) * NSEAL
+          RCNT(IP) = NLOCB * NSEALP(IP)
+          END DO
+        SDSP(1) = 0
+        RDSP(1) = 0
+        DO IP=2, NAPROC
+          SDSP(IP) = SDSP(IP-1) + SCNT(IP-1)
+          RDSP(IP) = RDSP(IP-1) + RCNT(IP-1)
+          END DO
+        ALLOCATE ( SBUF(MAX(1,NSPEC*NSEAL)), RBUF(MAX(1,NLOCB*NSEA)) )
+        END IF
+!
+! 2. Pack local spectra for every bin, ordered by owner; gather with ALLTOALLV
+!
+      K = 0
+      DO IB=1, NSPEC
+        ISP = ORD(IB)
+        DO JSEA=1, NSEAL
+          K = K + 1
+          SBUF(K) = VA(ISP,JSEA)
+          END DO
+        END DO
+      CALL MPI_ALLTOALLV ( SBUF, SCNT, SDSP, MPI_REAL,                   &
+                           RBUF, RCNT, RDSP, MPI_REAL, MPI_COMM_WCMP, IERR_MPI )
+!
+! 3. Propagate each locally owned bin on the full grid; results back into RBUF
+!
+      DO IB=1, NLOCB
+        ISP = LOCB(IB)
+        FIELD = 0.
+        DO IP=1, NAPROC
+          K = RDSP(IP) + (IB-1)*NSEALP(IP)
+          DO JSEA=1, NSEALP(IP)
+            ISEA = IP + (JSEA-1)*NAPROC
+            IXY  = MAPSF(ISEA,3)
+            FIELD(IXY) = RBUF(K+JSEA)
+            END DO
+          END DO
+        CALL W3XYPUG ( ISP, FACX, FACX, DTG, FIELD, VGX, VGY, UGDTUPDATE )
+        DO IP=1, NAPROC
+          K = RDSP(IP) + (IB-1)*NSEALP(IP)
+          DO JSEA=1, NSEALP(IP)
+            ISEA = IP + (JSEA-1)*NAPROC
+            IXY  = MAPSF(ISEA,3)
+            RBUF(K+JSEA) = FIELD(IXY)
+            END DO
+          END DO
+        END DO
+!
+! 4. Scatter back with ALLTOALLV (reverse pattern) and update local spectra
+!
+      CALL MPI_ALLTOALLV ( RBUF, RCNT, RDSP, MPI_REAL,                   &
+                           SBUF, SCNT, SDSP, MPI_REAL, MPI_COMM_WCMP, IERR_MPI )
+      K = 0
+      DO IB=1, NSPEC
+        ISP = ORD(IB)
+        DO JSEA=1, NSEAL
+          K = K + 1
+          CALL INIT_GET_ISEA ( ISEA, JSEA )
+          IXY = MAPSF(ISEA,3)
+          IF ( MAPSTA(IXY) .NE. 0 ) VA(ISP,JSEA) = SBUF(K)
+          END DO
+        END DO
+!
+      RETURN
+      END SUBROUTINE W3XYA2A
+
       END MODULE W3WAVEMD
