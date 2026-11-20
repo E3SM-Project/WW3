@@ -6915,7 +6915,7 @@
                      ', ICESNL = ',F6.2,', ICESDS = ',F5.2,','/       &
                '        ICEDDISP = ',F5.2,', ICEFDISP = ',F5.2,       &
                      ', CALTYPE = ',A8,' , TRCKCMPR = ', L3,','/      &
-               '        BTBET  = ', F6.2, ' /')
+               '        BTBET  = ', F6.2,', ICNUMERICS = ', L3, ' /')
 !
  2976 FORMAT ( '  &OUTS P2SF  =',I2,', I1P2SF =',I2,', I2P2SF =',I3,','/&    
                '        US3D  =',I2,', I1US3D =',I3,', I2US3D =',I3,','/&  
